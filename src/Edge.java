@@ -1,19 +1,10 @@
 public class Edge {
-	final boolean NEXCLUDED = false;
-	final boolean EXCLUDED = true;
-	final int LCASES=256;
-	final int UCASES=257;
-	final int NUM=258;
-	final int EPSILON=259;
-	final int ANY=260;
-	final int WS=261;
-	
 	State start;
 	State end;
 	int type;
-	int exclude;
+	boolean exclude;
 	
-	public Edge(State start, State end, int type, int exclude) {
+	public Edge(State start, State end, int type, boolean exclude) {
 		super();
 		this.start = start;
 		this.end = end;
@@ -25,26 +16,26 @@ public class Edge {
 	{
 		switch(type)
 		{
-		case LCASES:
+		case Resource.LCASES:
 			if(p>='a'&&p<='z') 
-				return this.exclude==0;
-		case UCASES:
+				return this.exclude;
+		case Resource.UCASES:
 			if (p >= 'A' && p <= 'Z') 
-				return this.exclude==0;
-		case NUM:
+				return this.exclude;
+		case Resource.NUM:
 			if (p >= '0' && p <= '9') 
-				return this.exclude==0;
-		case ANY:
+				return this.exclude;
+		case Resource.ANY:
 			if (p >= -1 && p <= 127) 
-				return this.exclude==0;
-		case WS:
+				return this.exclude;
+		case Resource.WS:
 			if(p=='\t' || p=='\n' || p=='\f' || p=='\r' || p==0x0B)
-				return this.exclude==0;
+				return this.exclude;
 			break;
 		default:
 			if(type==p)
-				return this.exclude==0;
+				return this.exclude;
 		}
-		return this.exclude!=0;
+		return this.exclude;
 	}
 }

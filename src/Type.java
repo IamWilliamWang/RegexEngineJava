@@ -1,4 +1,4 @@
-@Deprecated
+
 public enum Type {
 	LCASES(256), UCASES(257), NUM(258), EPSILON(259), ANY(260), WS(261);
 	
@@ -11,7 +11,7 @@ public enum Type {
     public int value() {
         return this.value;
     }
-    @Deprecated
+    
     public static Object valueOf(char ch) {
     	if(ch==256)
     		return LCASES;

@@ -1,18 +1,16 @@
 import java.util.LinkedList;
 
 public class State {
-	final static int READY=-1;
-	final static int SUCCESS=1;
-	final static int FAIL=0;
+	
 	
 	public int status;
 	public LinkedList<Edge> InEdges = new LinkedList<>();
 	public LinkedList<Edge> OutEdges = new LinkedList<>();
 	public State() {
-		this.status=READY;
+		this.status=Resource.READY;
 	}
 	public State(Edge inEdges, Edge outEdges) {
-		this(inEdges,outEdges,READY);
+		this(inEdges,outEdges,Resource.READY);
 	}
 	
 	public State(Edge inEdges, Edge outEdges, int status) {

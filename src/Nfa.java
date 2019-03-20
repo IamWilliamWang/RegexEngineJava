@@ -1,29 +1,16 @@
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.ListIterator;
-
 public class Nfa {
 	public String regex = "";
-	public State Start = new State();
-	public State End = new State();
+	public State Start;
+	public State End;
 	public LinkedList<Edge> edgeList = new LinkedList<>();
 	public LinkedList<State> stateList = new LinkedList<>();
 	public LinkedList<Character> matchedChar = new LinkedList<>();
-	public static String regRead = "";
-	public static int regReadIndex=0;
+	public static CharsContainer regRead;
 	public static CharsContainer fileRead;
-	public static final int MAX_SIZE=512;
-	final int NEXCLUDED = 0;
-	final int EXCLUDED = 1;
-	final static int READY=-1;
-	final static int SUCCESS=1;
-	final static int FAIL=0;
-	final int LCASES=256;
-	final int UCASES=257;
-	final int NUM=258;
-	final int EPSILON=259;
-	final int ANY=260;
-	final int WS=261;
+	
 	public Nfa(String reg) {
 		this.regex=reg;
 		this.Start=new State();
@@ -36,12 +23,12 @@ public class Nfa {
 	
 	public int match(String content) {
 		boolean everMatched = false;
-		this.Start.status = SUCCESS;
+		this.Start.status = Resource.SUCCESS;
 		fileRead = new CharsContainer(content);
 		
 		while (fileRead.hasNext())
 		{
-			if (step(this.Start) == FAIL)
+			if (step(this.Start) == Resource.FAIL)
 			{
 				fileRead.Increase();
 				matchedChar.clear();
@@ -54,9 +41,9 @@ public class Nfa {
 			matchedChar.clear();
 		}	
 		if (everMatched)
-			return SUCCESS;
+			return Resource.SUCCESS;
 
-		return FAIL;
+		return Resource.FAIL;
 	}
 	private State regex2nfa(String reg, State start) {
 		return regex2nfa(new CharsContainer(reg), start);
@@ -75,7 +62,7 @@ public class Nfa {
 			case '.':	/* any */
 				currentStart = currentEnd;
 				currentEnd = new State();
-				newEdge(currentStart, currentEnd, ANY, NEXCLUDED);	
+				newEdge(currentStart, currentEnd, Resource.ANY, Resource.NEXCLUDED);	
 				this.addState(currentEnd);
 				break;
 			case '|':	// alternate 
@@ -87,7 +74,7 @@ public class Nfa {
 				regRead.Decrease();
 				break;
 			case '?':	// zero or one 
-				newEdge(currentStart, currentEnd, EPSILON, NEXCLUDED);
+				newEdge(currentStart, currentEnd, Resource.EPSILON, Resource.NEXCLUDED);
 				break;
 			case '*':	// zero or more 
 				alternate = currentEnd;
@@ -119,7 +106,7 @@ public class Nfa {
 				regRead.Increase();
 				currentStart = currentEnd;
 				currentEnd = new State();
-				newEdge(currentStart, currentEnd, (int)regRead.getChar(), EXCLUDED);
+				newEdge(currentStart, currentEnd, (int)regRead.getChar(), Resource.EXCLUDED);
 				this.addState(currentEnd);
 				break;
 			case '\\':
@@ -138,7 +125,7 @@ public class Nfa {
 			default:
 				currentStart = currentEnd;
 				currentEnd = new State();
-				newEdge(currentStart, currentEnd, (int)regRead.getChar(), NEXCLUDED);
+				newEdge(currentStart, currentEnd, (int)regRead.getChar(), Resource.NEXCLUDED);
 				this.addState(currentEnd);
 				break;
 			}
@@ -154,33 +141,33 @@ public class Nfa {
 	}
 	private State group(State top) {
 		State s = new State();
-		boolean ifexclude = NEXCLUDED!=0;
-		if (regRead.charAt(regReadIndex) == '^') {
-			regReadIndex++;
-			ifexclude = EXCLUDED!=0;
+		boolean ifexclude = Resource.NEXCLUDED;
+		if (regRead.getChar() == '^') {
+			regRead.Increase();
+			ifexclude = Resource.EXCLUDED;
 		}
-		for (; regRead.charAt(regReadIndex) !=']'; regReadIndex++) {
-			switch (regRead.charAt(regReadIndex)) {
+		for (; regRead.getChar() !=']'; regRead.Increase()) {
+			switch (regRead.getChar()) {
 			case '0':
 			case 'a':
 			case 'A':
-				regReadIndex++;
-				if (regRead.charAt(regReadIndex) != '-') {
+				regRead.Increase();
+				if (regRead.getChar() != '-') {
 					System.out.println("NFA built failed, please check if the regular expression is right!");
 					return null;
 				}
 				break;
 			case '9':
-				newEdge(top, s, NUM, (ifexclude?1:0));
+				newEdge(top, s, Resource.NUM, ifexclude);
 				break;
 			case 'z':
-				newEdge(top, s, LCASES, (ifexclude?1:0));
+				newEdge(top, s, Resource.LCASES, ifexclude);
 				break;
 			case 'Z':
-				newEdge(top, s, UCASES, (ifexclude?1:0));
+				newEdge(top, s, Resource.UCASES, ifexclude);
 				break;
 			case '\\':
-				regReadIndex++;
+				regRead.Increase();
 				if ((s = preDefine(top)) == null) 
 					return null;
 				break;
@@ -194,28 +181,28 @@ public class Nfa {
 	}
 	private State preDefine(State top) {
 		State s = new State();
-		switch (regRead.charAt(regReadIndex)) {
+		switch (regRead.getChar()) {
 			case 'd':
-				newEdge(top, s, NUM, NEXCLUDED);
+				newEdge(top, s, Resource.NUM, Resource.NEXCLUDED);
 				break;
 			case 'D':
-				newEdge(top, s, NUM, EXCLUDED);
+				newEdge(top, s, Resource.NUM, Resource.EXCLUDED);
 				break;
 			case 's':
-				newEdge(top, s, WS, NEXCLUDED);
+				newEdge(top, s, Resource.WS, Resource.NEXCLUDED);
 				break;
 			case 'S':
-				newEdge(top, s, WS, EXCLUDED);
+				newEdge(top, s, Resource.WS, Resource.EXCLUDED);
 				break;
 			case 'w':
-				newEdge(top, s, NUM, NEXCLUDED);
-				newEdge(top, s, UCASES, NEXCLUDED);
-				newEdge(top, s, LCASES, NEXCLUDED);
+				newEdge(top, s, Resource.NUM, Resource.NEXCLUDED);
+				newEdge(top, s, Resource.UCASES, Resource.NEXCLUDED);
+				newEdge(top, s, Resource.LCASES, Resource.NEXCLUDED);
 				break;
 			case 'W':
-				newEdge(top, s, NUM, EXCLUDED);
-				newEdge(top, s, UCASES, EXCLUDED);
-				newEdge(top, s, LCASES, EXCLUDED);
+				newEdge(top, s, Resource.NUM, Resource.EXCLUDED);
+				newEdge(top, s, Resource.UCASES, Resource.EXCLUDED);
+				newEdge(top, s, Resource.LCASES, Resource.EXCLUDED);
 				break;
 			default:
 				System.out.println("NFA built failed, please check if the regular expression is right!");
@@ -223,7 +210,10 @@ public class Nfa {
 		}
 		return s;
 	}
-	private void newEdge(State start,State end,int type,int exclude) {
+	private void newEdge(State start,State end,int type) {
+		newEdge(start,end,type,Resource.EXCLUDED);
+	}
+	private void newEdge(State start,State end,int type,boolean exclude) {
 		Edge out = new Edge(start, end, type, exclude);
 		end.patch(out, end);
 		start.patch(start, out);
@@ -233,24 +223,24 @@ public class Nfa {
 		ListIterator<Edge> itor;
 		itor = current.OutEdges.listIterator();
 
-		if (End.status == SUCCESS) 
-			return SUCCESS;
+		if (End.status == Resource.SUCCESS) 
+			return Resource.SUCCESS;
 
 		while(itor.hasNext()) {
 			Edge edge = itor.next();
 			if(edge.match(fileRead.getChar())) {
-				edge.end.status=SUCCESS;
+				edge.end.status=Resource.SUCCESS;
 				matchedChar.add(fileRead.getChar());
 				fileRead.Increase();
 				if(step(edge.end)!=0)
-					return SUCCESS;
+					return Resource.SUCCESS;
 				fileRead.Decrease();
 				matchedChar.removeLast();
 			}
-			if(edge.type==EPSILON && step(edge.end)!=0)
-				return SUCCESS;
+			if(edge.type==Resource.EPSILON && step(edge.end)!=0)
+				return Resource.SUCCESS;
 		}
-		return FAIL;
+		return Resource.FAIL;
 	}
 	private void printMatched() {
 		ListIterator<Character> itor;
@@ -265,7 +255,7 @@ public class Nfa {
 		itor = stateList.listIterator();
 		State current = itor.next();
 		while(itor.hasNext()) {
-			itor.next().status=FAIL;
+			itor.next().status=Resource.FAIL;
 		}
 	}
 	@Override
