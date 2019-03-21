@@ -17,7 +17,7 @@ public class State {
 		this.InEdges.add(inEdges);
 		addOutEdge(outEdges);
 	}
-	//除bug补丁
+	
 	public void addOutEdge(Edge e) {
 		if(OutEdges.contains(e))
 			return;

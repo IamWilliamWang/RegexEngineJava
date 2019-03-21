@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.ListIterator;
 public class Nfa {
@@ -14,8 +15,8 @@ public class Nfa {
 		this.regex=reg;
 		this.Start=new State();
 		this.stateList.add(Start);
-		if((End=regex2nfa(regex,Start))!=null) 
-			System.out.println("NFA has built successfully!");
+		if((End=regex2nfa(regex,Start))!=null) {}
+			//System.out.println("NFA has built successfully!");
 		else
 			System.out.println("NFA built failed, please check if the regular expression is right!");
 	}
@@ -34,7 +35,8 @@ public class Nfa {
 				refresh();
 				continue;
 			}
-			printMatched();
+			saveMatched();
+			//printMatched();
 			everMatched = true;
 			refresh();
 			matchedChar.clear();
@@ -234,12 +236,19 @@ public class Nfa {
 		}
 		return Resource.FAIL;
 	}
+	public ArrayList<String> matchedList = new ArrayList<>();
+	private void saveMatched() {
+		Character[] chars = this.matchedChar.toArray(new Character[] {});
+		StringBuilder charsStr=new StringBuilder();
+		for(char ch:chars)
+			charsStr.append(ch);
+		matchedList.add(charsStr.toString());
+	}
 	private void printMatched() {
-		ListIterator<Character> itor;
-		itor = matchedChar.listIterator();
-		System.out.println("Matced characters: ");
-		while(itor.hasNext())
-			System.out.print(itor.next());
+		System.out.print("Matched characters: ");
+		for(char ch :matchedChar) {
+			System.out.print(ch);
+		}
 		System.out.println();
 	}
 	private void refresh() {
