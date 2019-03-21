@@ -13,7 +13,7 @@ public class Nfa {
 	public Nfa(String reg) {
 		this.regex=reg;
 		this.Start=new State();
-		this.addState(Start);
+		this.stateList.add(Start);
 		if((End=regex2nfa(regex,Start))!=null) 
 			System.out.println("NFA has built successfully!");
 		else
@@ -62,12 +62,13 @@ public class Nfa {
 				currentStart = currentEnd;
 				currentEnd = new State();
 				newEdge(currentStart, currentEnd, Resource.ANY, Resource.NEXCLUDED);	
-				this.addState(currentEnd);
+				this.stateList.add(currentEnd);
 				break;
 			case '|':	// alternate 
 				regRead.Increase();
 				currentStart = start;
 				alternate= regex2nfa(regRead.getSubString(), start);
+				//regRead.Increase();//补丁
 				currentEnd.merge(alternate);
 				stateList.remove(alternate);
 				regRead.Decrease();
@@ -106,14 +107,14 @@ public class Nfa {
 				currentStart = currentEnd;
 				currentEnd = new State();
 				newEdge(currentStart, currentEnd, (int)regRead.getChar(), Resource.EXCLUDED);
-				this.addState(currentEnd);
+				this.stateList.add(currentEnd);
 				break;
 			case '\\':
 				regRead.Increase();
 				currentStart = start;
 				if ((currentEnd = preDefine(currentEnd)) == null) 
 					return null;
-				this.addState(currentEnd);
+				this.stateList.add(currentEnd);
 				break;
 			case '\t':
 			case '\n':
@@ -125,7 +126,7 @@ public class Nfa {
 				currentStart = currentEnd;
 				currentEnd = new State();
 				newEdge(currentStart, currentEnd, (int)regRead.getChar(), Resource.NEXCLUDED);
-				this.addState(currentEnd);
+				this.stateList.add(currentEnd);
 				break;
 			}
 			regRead.Increase();
@@ -133,11 +134,6 @@ public class Nfa {
 		return currentEnd;
 	}
 	
-	private void addState(State s) {
-		if(this.stateList.contains(s))
-			return;
-		this.stateList.add(s);
-	}
 	private State group(State top) {
 		State s = new State();
 		boolean ifexclude = Resource.NEXCLUDED;
@@ -175,7 +171,7 @@ public class Nfa {
 				return null;
 			}		
 		}
-		this.addState(s);
+		this.stateList.add(s);
 		return s;
 	}
 	private State preDefine(State top) {
@@ -219,14 +215,11 @@ public class Nfa {
 		edgeList.add(out);
 	}
 	private int step(State current) {
-		ListIterator<Edge> itor;
-		itor = current.OutEdges.listIterator();
 
 		if (End.status == Resource.SUCCESS) 
 			return Resource.SUCCESS;
 
-		while(itor.hasNext()) {
-			Edge edge = itor.next();
+		for(Edge edge:current.OutEdges) {
 			if(edge.match(fileRead.getChar())) {
 				edge.end.status=Resource.SUCCESS;
 				matchedChar.add(fileRead.getChar());
@@ -250,11 +243,8 @@ public class Nfa {
 		System.out.println();
 	}
 	private void refresh() {
-		ListIterator<State> itor;   
-		itor = stateList.listIterator();
-		State current = itor.next();
-		while(itor.hasNext()) {
-			itor.next().status=Resource.FAIL;
+		for(State state:this.stateList) {
+			state.status=Resource.FAIL;
 		}
 	}
 	@Override

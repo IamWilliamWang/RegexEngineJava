@@ -33,9 +33,20 @@ public class Edge {
 				return this.exclude;
 			break;
 		default:
-			if(type==p)
-				return this.exclude;
+			char typeCharacter=(char)type;
+			if(typeCharacter==p)
+				return !this.exclude;
 		}
 		return this.exclude;
+	}
+	@Override
+	public boolean equals(Object obj) {
+		// TODO Auto-generated method stub
+		return this.type==((Edge)obj).type;
+	}
+	@Override
+	public String toString() {
+		// TODO Auto-generated method stub
+		return this.type+"";
 	}
 }

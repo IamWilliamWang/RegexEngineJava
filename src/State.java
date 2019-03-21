@@ -2,7 +2,6 @@ import java.util.LinkedList;
 
 public class State {
 	
-	
 	public int status;
 	public LinkedList<Edge> InEdges = new LinkedList<>();
 	public LinkedList<Edge> OutEdges = new LinkedList<>();
@@ -15,14 +14,14 @@ public class State {
 	
 	public State(Edge inEdges, Edge outEdges, int status) {
 		this.status = status;
-		addEdge(this.InEdges,inEdges);
-		addEdge(this.OutEdges,outEdges);
+		this.InEdges.add(inEdges);
+		addOutEdge(outEdges);
 	}
 	//除bug补丁
-	public static void addEdge(LinkedList<Edge> Edges,Edge e) {
-		if(Edges.contains(e))
+	public void addOutEdge(Edge e) {
+		if(OutEdges.contains(e))
 			return;
-		Edges.add(e);
+		OutEdges.add(e);
 	}
 	
 	public void merge(State s) {
@@ -38,11 +37,11 @@ public class State {
 	
 	public void patch(Edge e, State s) {
 		e.end=s;
-		addEdge(s.InEdges,e);
+		s.InEdges.add(e);
 	}
 	public void patch(State s,Edge e) {
 		e.start=s;
-		addEdge(s.OutEdges,e);
+		s.addOutEdge(e);
 	}
 
 	@Override

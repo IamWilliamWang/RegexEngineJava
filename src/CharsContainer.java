@@ -30,7 +30,7 @@ public class CharsContainer implements Cloneable{
 		return chars.charAt(pointer);
 	}
 	public CharsContainer getSubString() {
-		CharsContainer con = this.cloneObject();
+		CharsContainer con = this;
 		con.minIndex=pointer;
 		return con;
 	}
