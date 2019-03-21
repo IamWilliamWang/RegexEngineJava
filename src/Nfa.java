@@ -4,11 +4,12 @@ import java.util.ListIterator;
 
 public class Nfa {
 	String regex;
-	State Start;
-	State End;
-	LinkedList<Edge> edgeList = new LinkedList<>();
-	LinkedList<State> stateList = new LinkedList<>();
-	LinkedList<Character> matchedChar = new LinkedList<>();
+	State startState;
+	State endState;
+	LinkedList<Edge> edgeList = new LinkedList<>(); //储存Edge的链表
+	LinkedList<State> stateList = new LinkedList<>(); //储存State的链表
+	LinkedList<Character> matchedChar = new LinkedList<>(); //暂时储存匹配regex的字符
+	LinkedList<String> matchedList = new LinkedList<>(); //储存所有匹配的字符串
 	public static CharArray regRead;
 	public static CharArray fileRead;
 	
@@ -17,9 +18,9 @@ public class Nfa {
 	 */
 	public Nfa(String reg) {
 		this.regex = reg;
-		this.Start = new State();
-		this.stateList.add(Start);
-		if ((End = regex2nfa(regex, Start)) != null) {
+		this.startState = new State();
+		this.stateList.add(startState);
+		if ((endState = regex2nfa(regex, startState)) != null) {
 			// System.out.println("NFA has built successfully!");
 		}
 		else
@@ -31,18 +32,17 @@ public class Nfa {
 	 */
 	public Status match(String content) {
 		boolean everMatched = false;
-		this.Start.status = Status.SUCCESS;
+		this.startState.status = Status.SUCCESS;
 		fileRead = new CharArray(content);
 
 		while (!fileRead.reachEnding()) {
-			if (step(this.Start) == Status.FAIL) {
+			if (step(this.startState) == Status.FAIL) {
 				fileRead.increase();
 				matchedChar.clear();
 				refresh();
 				continue;
 			}
 			saveMatched();
-			// printMatched();
 			everMatched = true;
 			refresh();
 			matchedChar.clear();
@@ -59,7 +59,7 @@ public class Nfa {
 
 	private State regex2nfa(CharArray reg, State start) {
 		State currentEnd, currentStart = null;
-		State alternate;
+		State alternate = null;
 		ListIterator<Edge> itor;
 		if (regex == null)
 			return null;
@@ -68,13 +68,13 @@ public class Nfa {
 		CharArray regRead = reg.cloneObject();
 		while (!regRead.reachEnding()) {
 			switch (regRead.getChar()) {
-			case '.': /* any */
+			case '.': // 任意
 				currentStart = currentEnd;
 				currentEnd = new State();
 				newEdge(currentStart, currentEnd, Resource.ANY, Resource.NEXCLUDED);
 				this.stateList.add(currentEnd);
 				break;
-			case '|': // alternate
+			case '|': // 或者
 				regRead.increase();
 				currentStart = start;
 				alternate = regex2nfa(regRead.getSubString(), start);
@@ -82,16 +82,16 @@ public class Nfa {
 				stateList.remove(alternate);
 				regRead.decrease();
 				break;
-			case '?': // zero or one
+			case '?': // 0或1
 				newEdge(currentStart, currentEnd, Resource.EPSILON, Resource.NEXCLUDED);
 				break;
-			case '*': // zero or more
+			case '*': // >=0
 				alternate = currentEnd;
 				currentStart.merge(alternate);
 				stateList.remove(alternate);
 				currentEnd = currentStart;
 				break;
-			case '+': /* one or more */
+			case '+': // >=1
 				itor = currentStart.OutEdges.listIterator();
 				while (itor.hasNext()) {
 					Edge edge = itor.next();
@@ -111,14 +111,14 @@ public class Nfa {
 				if ((currentEnd = group(currentEnd)) == null)
 					return null;
 				break;
-			case '^':
+			case '^': // 结尾符
 				regRead.increase();
 				currentStart = currentEnd;
 				currentEnd = new State();
 				newEdge(currentStart, currentEnd, (int) regRead.getChar(), Resource.EXCLUDED);
 				this.stateList.add(currentEnd);
 				break;
-			case '\\':
+			case '\\': //转义字符
 				regRead.increase();
 				currentStart = start;
 				if ((currentEnd = preDefine(currentEnd)) == null)
@@ -142,6 +142,7 @@ public class Nfa {
 		return currentEnd;
 	}
 
+	/* 用于生成[]内状态 */
 	private State group(State top) {
 		State s = new State();
 		boolean ifexclude = Resource.NEXCLUDED;
@@ -215,6 +216,9 @@ public class Nfa {
 		return s;
 	}
 
+	/*
+	 * 给edgeList加入新的边
+	 */
 	private void newEdge(State start, State end, int type, boolean exclude) {
 		Edge out = new Edge(start, end, type, exclude);
 		end.patch(out, end);
@@ -222,9 +226,12 @@ public class Nfa {
 		edgeList.add(out);
 	}
 
+	/*
+	 * 递归执行，如果fileRead在结束前State到达了终点则返回Success
+	 */
 	private Status step(State current) {
 
-		if (End.status == Status.SUCCESS)
+		if (endState.status == Status.SUCCESS)
 			return Status.SUCCESS;
 
 		for (Edge edge : current.OutEdges) {
@@ -243,7 +250,7 @@ public class Nfa {
 		return Status.FAIL;
 	}
 
-	public ArrayList<String> matchedList = new ArrayList<>();
+	
 
 	private void saveMatched() {
 		Character[] chars = this.matchedChar.toArray(new Character[] {});
@@ -270,7 +277,7 @@ public class Nfa {
 	@Override
 	public String toString() {
 		// TODO Auto-generated method stub
-		return "regex:" + this.regex + ",Start:" + this.Start + ",End:" + this.End + ",\nedgeList:"
+		return "regex:" + this.regex + ",Start:" + this.startState + ",End:" + this.endState + ",\nedgeList:"
 				+ this.edgeList.size() + ",stateList:" + this.stateList.size() + ",matchedChar=" + this.matchedChar;
 	}
 	// Getters and setters
@@ -283,19 +290,19 @@ public class Nfa {
 	}
 
 	public State getStart() {
-		return Start;
+		return startState;
 	}
 
 	public void setStart(State start) {
-		Start = start;
+		startState = start;
 	}
 
 	public State getEnd() {
-		return End;
+		return endState;
 	}
 
 	public void setEnd(State end) {
-		End = end;
+		endState = end;
 	}
 
 	public LinkedList<Edge> getEdgeList() {
@@ -322,11 +329,11 @@ public class Nfa {
 		this.matchedChar = matchedChar;
 	}
 
-	public ArrayList<String> getMatchedList() {
+	public LinkedList<String> getMatchedList() {
 		return matchedList;
 	}
 
-	public void setMatchedList(ArrayList<String> matchedList) {
+	public void setMatchedList(LinkedList<String> matchedList) {
 		this.matchedList = matchedList;
 	}
 }

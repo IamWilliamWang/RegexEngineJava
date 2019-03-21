@@ -1,9 +1,8 @@
-/CharsContainer.class
+/CharArray.class
 /Edge.class
 /Main.class
 /Nfa.class
 /Resource.class
 /State.class
-/Type.class
-/CharArray.class
 /Status.class
+/Type.class

@@ -2,6 +2,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class Main {
 	/*
@@ -34,13 +35,14 @@ public class Main {
 	}
 
 	public static void main(String[] args) {
-		String myRegularExpression = "a*[01]"; //正则表达式
+		System.out.print("Regex:");
+		String myRegularExpression = new Scanner(System.in).nextLine(); //正则表达式
 		Nfa nfa = new Nfa(converter(myRegularExpression)); //构建NFA
 		try {
 			String[] textLines = readAllLines("InputFile.txt");
 			for (int i = 0; i < textLines.length; i++) {
 				if (nfa.match(textLines[i])!=Status.FAIL) {
-					String matchedStr = nfa.matchedList.get(nfa.matchedList.size() - 1); //每次match成功后matchedList会多一个，取保存的最后一个
+					String matchedStr = nfa.matchedList.getLast(); //每次match成功后matchedList会多一个，取保存的最后一个
 					int startPosition = textLines[i].indexOf(matchedStr); //搜索开始位置
 					System.out.println("Match found on line " + (i + 1) + ", starting at position "
 							+ (startPosition + 1) + " and ending at position " + (startPosition + matchedStr.length())
