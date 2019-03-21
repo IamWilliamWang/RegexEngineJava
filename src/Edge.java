@@ -1,8 +1,8 @@
 public class Edge {
-	State start;
-	State end;
-	int type;
-	boolean exclude;
+	State start; //边对应的开始节点
+	State end; //边对应的结束节点
+	int type; //储存字符或类别信息
+	boolean exclude; //用于结尾生成
 	
 	public Edge(State start, State end, int type, boolean exclude) {
 		super();
@@ -12,38 +12,42 @@ public class Edge {
 		this.exclude = exclude;
 	}
 	
-	boolean match(char p)
+	/*
+	 * 该字符是否满足条件
+	 */
+	boolean match(char ch)
 	{
 		switch(type)
 		{
 		case Resource.LCASES:
-			if(p>='a'&&p<='z') 
+			if(Character.isLowerCase(ch)) 
 				return this.exclude;
 		case Resource.UCASES:
-			if (p >= 'A' && p <= 'Z') 
+			if (Character.isUpperCase(ch)) 
 				return this.exclude;
 		case Resource.NUM:
-			if (p >= '0' && p <= '9') 
+			if (Character.isDigit(ch)) 
 				return this.exclude;
 		case Resource.ANY:
-			if (p >= -1 && p <= 127) 
+			if (ch >= -1 && ch <= 127) 
 				return this.exclude;
 		case Resource.WS:
-			if(p=='\t' || p=='\n' || p=='\f' || p=='\r' || p==0x0B)
+			if(ch=='\t' || ch=='\n' || ch=='\f' || ch=='\r' || ch==0x0B)
 				return this.exclude;
 			break;
 		default:
-			char typeCharacter=(char)type;
-			if(typeCharacter==p)
+			if(ch == (char)type)
 				return !this.exclude;
 		}
 		return this.exclude;
 	}
+	
 	@Override
 	public boolean equals(Object obj) {
 		// TODO Auto-generated method stub
 		return this.type==((Edge)obj).type;
 	}
+	
 	@Override
 	public String toString() {
 		// TODO Auto-generated method stub

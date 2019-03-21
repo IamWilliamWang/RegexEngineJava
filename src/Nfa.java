@@ -1,120 +1,127 @@
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.ListIterator;
+
 public class Nfa {
-	public String regex = "";
-	public State Start;
-	public State End;
-	public LinkedList<Edge> edgeList = new LinkedList<>();
-	public LinkedList<State> stateList = new LinkedList<>();
-	public LinkedList<Character> matchedChar = new LinkedList<>();
-	public static CharsContainer regRead;
-	public static CharsContainer fileRead;
+	String regex;
+	State Start;
+	State End;
+	LinkedList<Edge> edgeList = new LinkedList<>();
+	LinkedList<State> stateList = new LinkedList<>();
+	LinkedList<Character> matchedChar = new LinkedList<>();
+	public static CharArray regRead;
+	public static CharArray fileRead;
 	
+	/*
+	 * 构造函数
+	 */
 	public Nfa(String reg) {
-		this.regex=reg;
-		this.Start=new State();
+		this.regex = reg;
+		this.Start = new State();
 		this.stateList.add(Start);
-		if((End=regex2nfa(regex,Start))!=null) {}
-			//System.out.println("NFA has built successfully!");
+		if ((End = regex2nfa(regex, Start)) != null) {
+			// System.out.println("NFA has built successfully!");
+		}
 		else
 			System.out.println("NFA built failed, please check if the regular expression is right!");
 	}
 	
-	public int match(String content) {
+	/*
+	 * content是否符合正则表达式
+	 */
+	public Status match(String content) {
 		boolean everMatched = false;
-		this.Start.status = Resource.SUCCESS;
-		fileRead = new CharsContainer(content);
-		
-		while (fileRead.hasNext())
-		{
-			if (step(this.Start) == Resource.FAIL)
-			{
-				fileRead.Increase();
+		this.Start.status = Status.SUCCESS;
+		fileRead = new CharArray(content);
+
+		while (!fileRead.reachEnding()) {
+			if (step(this.Start) == Status.FAIL) {
+				fileRead.increase();
 				matchedChar.clear();
 				refresh();
 				continue;
 			}
 			saveMatched();
-			//printMatched();
+			// printMatched();
 			everMatched = true;
 			refresh();
 			matchedChar.clear();
-		}	
+		}
 		if (everMatched)
-			return Resource.SUCCESS;
+			return Status.SUCCESS;
 
-		return Resource.FAIL;
+		return Status.FAIL;
 	}
+
 	private State regex2nfa(String reg, State start) {
-		return regex2nfa(new CharsContainer(reg), start);
+		return regex2nfa(new CharArray(reg), start);
 	}
-	private State regex2nfa(CharsContainer reg, State start) {
+
+	private State regex2nfa(CharArray reg, State start) {
 		State currentEnd, currentStart = null;
 		State alternate;
 		ListIterator<Edge> itor;
-		if(regex==null)
+		if (regex == null)
 			return null;
-		
-		currentEnd=start;
-		CharsContainer regRead = reg.cloneObject();
-		while(regRead.hasNext()) {
-			switch(regRead.getChar()) {
-			case '.':	/* any */
+
+		currentEnd = start;
+		CharArray regRead = reg.cloneObject();
+		while (!regRead.reachEnding()) {
+			switch (regRead.getChar()) {
+			case '.': /* any */
 				currentStart = currentEnd;
 				currentEnd = new State();
-				newEdge(currentStart, currentEnd, Resource.ANY, Resource.NEXCLUDED);	
+				newEdge(currentStart, currentEnd, Resource.ANY, Resource.NEXCLUDED);
 				this.stateList.add(currentEnd);
 				break;
-			case '|':	// alternate 
-				regRead.Increase();
+			case '|': // alternate
+				regRead.increase();
 				currentStart = start;
-				alternate= regex2nfa(regRead.getSubString(), start);
-				//regRead.Increase();//补丁
+				alternate = regex2nfa(regRead.getSubString(), start);
 				currentEnd.merge(alternate);
 				stateList.remove(alternate);
-				regRead.Decrease();
+				regRead.decrease();
 				break;
-			case '?':	// zero or one 
+			case '?': // zero or one
 				newEdge(currentStart, currentEnd, Resource.EPSILON, Resource.NEXCLUDED);
 				break;
-			case '*':	// zero or more 
+			case '*': // zero or more
 				alternate = currentEnd;
 				currentStart.merge(alternate);
 				stateList.remove(alternate);
 				currentEnd = currentStart;
 				break;
-			case '+':	/* one or more */
+			case '+': /* one or more */
 				itor = currentStart.OutEdges.listIterator();
-				while(itor.hasNext()) {
+				while (itor.hasNext()) {
 					Edge edge = itor.next();
-					newEdge(currentEnd,edge.end,edge.type,edge.exclude);
+					newEdge(currentEnd, edge.end, edge.type, edge.exclude);
 				}
 				break;
 			case '(':
-				regRead.Increase();
+				regRead.increase();
 				currentStart = currentEnd;
 				currentEnd = regex2nfa(regRead.getSubString(), currentEnd);
 				break;
 			case ')':
 				return currentEnd;
 			case '[':
-				regRead.Increase();
+				regRead.increase();
 				currentStart = currentEnd;
-				if((currentEnd = group(currentEnd)) == null) 
+				if ((currentEnd = group(currentEnd)) == null)
 					return null;
-				break;	
+				break;
 			case '^':
-				regRead.Increase();
+				regRead.increase();
 				currentStart = currentEnd;
 				currentEnd = new State();
-				newEdge(currentStart, currentEnd, (int)regRead.getChar(), Resource.EXCLUDED);
+				newEdge(currentStart, currentEnd, (int) regRead.getChar(), Resource.EXCLUDED);
 				this.stateList.add(currentEnd);
 				break;
 			case '\\':
-				regRead.Increase();
+				regRead.increase();
 				currentStart = start;
-				if ((currentEnd = preDefine(currentEnd)) == null) 
+				if ((currentEnd = preDefine(currentEnd)) == null)
 					return null;
 				this.stateList.add(currentEnd);
 				break;
@@ -122,33 +129,32 @@ public class Nfa {
 			case '\n':
 			case '\f':
 			case '\r':
-			case 0x0B:
 				break;
 			default:
 				currentStart = currentEnd;
 				currentEnd = new State();
-				newEdge(currentStart, currentEnd, (int)regRead.getChar(), Resource.NEXCLUDED);
+				newEdge(currentStart, currentEnd, (int) regRead.getChar(), Resource.NEXCLUDED);
 				this.stateList.add(currentEnd);
 				break;
 			}
-			regRead.Increase();
+			regRead.increase();
 		}
 		return currentEnd;
 	}
-	
+
 	private State group(State top) {
 		State s = new State();
 		boolean ifexclude = Resource.NEXCLUDED;
 		if (regRead.getChar() == '^') {
-			regRead.Increase();
+			regRead.increase();
 			ifexclude = Resource.EXCLUDED;
 		}
-		for (; regRead.getChar() !=']'; regRead.Increase()) {
+		for (; regRead.getChar() != ']'; regRead.increase()) {
 			switch (regRead.getChar()) {
 			case '0':
 			case 'a':
 			case 'A':
-				regRead.Increase();
+				regRead.increase();
 				if (regRead.getChar() != '-') {
 					System.out.println("NFA built failed, please check if the regular expression is right!");
 					return null;
@@ -164,101 +170,163 @@ public class Nfa {
 				newEdge(top, s, Resource.UCASES, ifexclude);
 				break;
 			case '\\':
-				regRead.Increase();
-				if ((s = preDefine(top)) == null) 
+				regRead.increase();
+				if ((s = preDefine(top)) == null)
 					return null;
 				break;
 			default:
 				System.out.println("NFA built failed, please check if the regular expression is right!");
 				return null;
-			}		
+			}
 		}
 		this.stateList.add(s);
 		return s;
 	}
+
 	private State preDefine(State top) {
 		State s = new State();
 		switch (regRead.getChar()) {
-			case 'd':
-				newEdge(top, s, Resource.NUM, Resource.NEXCLUDED);
-				break;
-			case 'D':
-				newEdge(top, s, Resource.NUM, Resource.EXCLUDED);
-				break;
-			case 's':
-				newEdge(top, s, Resource.WS, Resource.NEXCLUDED);
-				break;
-			case 'S':
-				newEdge(top, s, Resource.WS, Resource.EXCLUDED);
-				break;
-			case 'w':
-				newEdge(top, s, Resource.NUM, Resource.NEXCLUDED);
-				newEdge(top, s, Resource.UCASES, Resource.NEXCLUDED);
-				newEdge(top, s, Resource.LCASES, Resource.NEXCLUDED);
-				break;
-			case 'W':
-				newEdge(top, s, Resource.NUM, Resource.EXCLUDED);
-				newEdge(top, s, Resource.UCASES, Resource.EXCLUDED);
-				newEdge(top, s, Resource.LCASES, Resource.EXCLUDED);
-				break;
-			default:
-				System.out.println("NFA built failed, please check if the regular expression is right!");
-				return null;		
+		case 'd':
+			newEdge(top, s, Resource.NUM, Resource.NEXCLUDED);
+			break;
+		case 'D':
+			newEdge(top, s, Resource.NUM, Resource.EXCLUDED);
+			break;
+		case 's':
+			newEdge(top, s, Resource.WS, Resource.NEXCLUDED);
+			break;
+		case 'S':
+			newEdge(top, s, Resource.WS, Resource.EXCLUDED);
+			break;
+		case 'w':
+			newEdge(top, s, Resource.NUM, Resource.NEXCLUDED);
+			newEdge(top, s, Resource.UCASES, Resource.NEXCLUDED);
+			newEdge(top, s, Resource.LCASES, Resource.NEXCLUDED);
+			break;
+		case 'W':
+			newEdge(top, s, Resource.NUM, Resource.EXCLUDED);
+			newEdge(top, s, Resource.UCASES, Resource.EXCLUDED);
+			newEdge(top, s, Resource.LCASES, Resource.EXCLUDED);
+			break;
+		default:
+			System.out.println("NFA built failed, please check if the regular expression is right!");
+			return null;
 		}
 		return s;
 	}
-	private void newEdge(State start,State end,int type) {
-		newEdge(start,end,type,Resource.EXCLUDED);
-	}
-	private void newEdge(State start,State end,int type,boolean exclude) {
+
+	private void newEdge(State start, State end, int type, boolean exclude) {
 		Edge out = new Edge(start, end, type, exclude);
 		end.patch(out, end);
 		start.patch(start, out);
 		edgeList.add(out);
 	}
-	private int step(State current) {
 
-		if (End.status == Resource.SUCCESS) 
-			return Resource.SUCCESS;
+	private Status step(State current) {
 
-		for(Edge edge:current.OutEdges) {
-			if(edge.match(fileRead.getChar())) {
-				edge.end.status=Resource.SUCCESS;
+		if (End.status == Status.SUCCESS)
+			return Status.SUCCESS;
+
+		for (Edge edge : current.OutEdges) {
+			if (edge.match(fileRead.getChar())) {
+				edge.end.status = Status.SUCCESS;
 				matchedChar.add(fileRead.getChar());
-				fileRead.Increase();
-				if(step(edge.end)!=0)
-					return Resource.SUCCESS;
-				fileRead.Decrease();
+				fileRead.increase();
+				if (step(edge.end) !=Status.FAIL)
+					return Status.SUCCESS;
+				fileRead.decrease();
 				matchedChar.removeLast();
 			}
-			if(edge.type==Resource.EPSILON && step(edge.end)!=0)
-				return Resource.SUCCESS;
+			if (edge.type == Resource.EPSILON && step(edge.end) != Status.FAIL)
+				return Status.SUCCESS;
 		}
-		return Resource.FAIL;
+		return Status.FAIL;
 	}
+
 	public ArrayList<String> matchedList = new ArrayList<>();
+
 	private void saveMatched() {
 		Character[] chars = this.matchedChar.toArray(new Character[] {});
-		StringBuilder charsStr=new StringBuilder();
-		for(char ch:chars)
+		StringBuilder charsStr = new StringBuilder();
+		for (char ch : chars)
 			charsStr.append(ch);
 		matchedList.add(charsStr.toString());
 	}
+
 	private void printMatched() {
 		System.out.print("Matched characters: ");
-		for(char ch :matchedChar) {
+		for (char ch : matchedChar) {
 			System.out.print(ch);
 		}
 		System.out.println();
 	}
+
 	private void refresh() {
-		for(State state:this.stateList) {
-			state.status=Resource.FAIL;
+		for (State state : this.stateList) {
+			state.status = Status.FAIL;
 		}
 	}
+
 	@Override
 	public String toString() {
 		// TODO Auto-generated method stub
-		return "regex:"+this.regex+",Start:"+this.Start+",End:"+this.End+",\nedgeList:"+this.edgeList.size()+",stateList:"+this.stateList.size()+",matchedChar="+this.matchedChar;
+		return "regex:" + this.regex + ",Start:" + this.Start + ",End:" + this.End + ",\nedgeList:"
+				+ this.edgeList.size() + ",stateList:" + this.stateList.size() + ",matchedChar=" + this.matchedChar;
+	}
+	// Getters and setters
+	public String getRegex() {
+		return regex;
+	}
+
+	public void setRegex(String regex) {
+		this.regex = regex;
+	}
+
+	public State getStart() {
+		return Start;
+	}
+
+	public void setStart(State start) {
+		Start = start;
+	}
+
+	public State getEnd() {
+		return End;
+	}
+
+	public void setEnd(State end) {
+		End = end;
+	}
+
+	public LinkedList<Edge> getEdgeList() {
+		return edgeList;
+	}
+
+	public void setEdgeList(LinkedList<Edge> edgeList) {
+		this.edgeList = edgeList;
+	}
+
+	public LinkedList<State> getStateList() {
+		return stateList;
+	}
+
+	public void setStateList(LinkedList<State> stateList) {
+		this.stateList = stateList;
+	}
+
+	public LinkedList<Character> getMatchedChar() {
+		return matchedChar;
+	}
+
+	public void setMatchedChar(LinkedList<Character> matchedChar) {
+		this.matchedChar = matchedChar;
+	}
+
+	public ArrayList<String> getMatchedList() {
+		return matchedList;
+	}
+
+	public void setMatchedList(ArrayList<String> matchedList) {
+		this.matchedList = matchedList;
 	}
 }
