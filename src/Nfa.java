@@ -1,4 +1,3 @@
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.ListIterator;
 
@@ -10,8 +9,8 @@ public class Nfa {
 	LinkedList<State> stateList = new LinkedList<>(); //储存State的链表
 	LinkedList<Character> matchedChar = new LinkedList<>(); //暂时储存匹配regex的字符
 	LinkedList<String> matchedList = new LinkedList<>(); //储存所有匹配的字符串
-	public static CharArray regRead;
-	public static CharArray fileRead;
+	public static CharArray regRead; //读取的正则表达式
+	public static CharArray fileRead; //读取的文件中该行的内容
 	
 	/*
 	 * 构造函数
@@ -24,7 +23,7 @@ public class Nfa {
 			// System.out.println("NFA has built successfully!");
 		}
 		else
-			System.out.println("NFA built failed, please check if the regular expression is right!");
+			System.err.println("NFA built failed, please check if the regular expression is right!");
 	}
 	
 	/*
@@ -47,20 +46,22 @@ public class Nfa {
 			refresh();
 			matchedChar.clear();
 		}
-		if (everMatched)
-			return Status.SUCCESS;
-
-		return Status.FAIL;
+		return everMatched ? Status.SUCCESS : Status.FAIL;
 	}
 
+	/*
+	 * 转换正则式到NFA
+	 */
 	private State regex2nfa(String reg, State start) {
 		return regex2nfa(new CharArray(reg), start);
 	}
 
+	/*
+	 * 转换正则式到NFA
+	 */
 	private State regex2nfa(CharArray reg, State start) {
-		State currentEnd, currentStart = null;
-		State alternate = null;
-		ListIterator<Edge> itor;
+		State currentEnd, currentStart = null; //生成时记录State变化状态
+		State alternate = null; //用于|
 		if (regex == null)
 			return null;
 
@@ -92,9 +93,7 @@ public class Nfa {
 				currentEnd = currentStart;
 				break;
 			case '+': // >=1
-				itor = currentStart.OutEdges.listIterator();
-				while (itor.hasNext()) {
-					Edge edge = itor.next();
+				for(Edge edge : currentStart.outEdges) {
 					newEdge(currentEnd, edge.end, edge.type, edge.exclude);
 				}
 				break;
@@ -130,7 +129,7 @@ public class Nfa {
 			case '\f':
 			case '\r':
 				break;
-			default:
+			default: //当regRead为字符时
 				currentStart = currentEnd;
 				currentEnd = new State();
 				newEdge(currentStart, currentEnd, (int) regRead.getChar(), Resource.NEXCLUDED);
@@ -184,36 +183,39 @@ public class Nfa {
 		return s;
 	}
 
+	/*
+	 * 预定义
+	 */
 	private State preDefine(State top) {
-		State s = new State();
+		State state = new State();
 		switch (regRead.getChar()) {
 		case 'd':
-			newEdge(top, s, Resource.NUM, Resource.NEXCLUDED);
+			newEdge(top, state, Resource.NUM, Resource.NEXCLUDED);
 			break;
 		case 'D':
-			newEdge(top, s, Resource.NUM, Resource.EXCLUDED);
+			newEdge(top, state, Resource.NUM, Resource.EXCLUDED);
 			break;
 		case 's':
-			newEdge(top, s, Resource.WS, Resource.NEXCLUDED);
+			newEdge(top, state, Resource.WS, Resource.NEXCLUDED);
 			break;
 		case 'S':
-			newEdge(top, s, Resource.WS, Resource.EXCLUDED);
+			newEdge(top, state, Resource.WS, Resource.EXCLUDED);
 			break;
 		case 'w':
-			newEdge(top, s, Resource.NUM, Resource.NEXCLUDED);
-			newEdge(top, s, Resource.UCASES, Resource.NEXCLUDED);
-			newEdge(top, s, Resource.LCASES, Resource.NEXCLUDED);
+			newEdge(top, state, Resource.NUM, Resource.NEXCLUDED);
+			newEdge(top, state, Resource.UCASES, Resource.NEXCLUDED);
+			newEdge(top, state, Resource.LCASES, Resource.NEXCLUDED);
 			break;
 		case 'W':
-			newEdge(top, s, Resource.NUM, Resource.EXCLUDED);
-			newEdge(top, s, Resource.UCASES, Resource.EXCLUDED);
-			newEdge(top, s, Resource.LCASES, Resource.EXCLUDED);
+			newEdge(top, state, Resource.NUM, Resource.EXCLUDED);
+			newEdge(top, state, Resource.UCASES, Resource.EXCLUDED);
+			newEdge(top, state, Resource.LCASES, Resource.EXCLUDED);
 			break;
 		default:
 			System.out.println("NFA built failed, please check if the regular expression is right!");
 			return null;
 		}
-		return s;
+		return state;
 	}
 
 	/*
@@ -234,7 +236,7 @@ public class Nfa {
 		if (endState.status == Status.SUCCESS)
 			return Status.SUCCESS;
 
-		for (Edge edge : current.OutEdges) {
+		for (Edge edge : current.outEdges) {
 			if (edge.match(fileRead.getChar())) {
 				edge.end.status = Status.SUCCESS;
 				matchedChar.add(fileRead.getChar());
@@ -251,7 +253,9 @@ public class Nfa {
 	}
 
 	
-
+	/*
+	 * 储存匹配的字符串到matchedList
+	 */
 	private void saveMatched() {
 		Character[] chars = this.matchedChar.toArray(new Character[] {});
 		StringBuilder charsStr = new StringBuilder();
@@ -268,18 +272,26 @@ public class Nfa {
 		System.out.println();
 	}
 
+	/*
+	 * 置所有State的状态为Fail
+	 */
 	private void refresh() {
 		for (State state : this.stateList) {
 			state.status = Status.FAIL;
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
 	@Override
 	public String toString() {
 		// TODO Auto-generated method stub
 		return "regex:" + this.regex + ",Start:" + this.startState + ",End:" + this.endState + ",\nedgeList:"
 				+ this.edgeList.size() + ",stateList:" + this.stateList.size() + ",matchedChar=" + this.matchedChar;
 	}
+	
 	// Getters and setters
 	public String getRegex() {
 		return regex;

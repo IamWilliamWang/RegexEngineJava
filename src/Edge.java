@@ -42,12 +42,20 @@ public class Edge {
 		return this.exclude;
 	}
 	
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
 	@Override
 	public boolean equals(Object obj) {
 		// TODO Auto-generated method stub
 		return this.type==((Edge)obj).type;
 	}
 	
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
 	@Override
 	public String toString() {
 		// TODO Auto-generated method stub

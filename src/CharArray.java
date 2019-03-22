@@ -2,13 +2,15 @@
  * 该类模仿char*的所有行为
  */
 public class CharArray implements Cloneable {
-	private int pointer = 0;
-	private int minIndex = 0;
+	private int pointer;
+	private int minIndex;
 	private String chars;
 	private boolean outOfIndex = false; //当数组越界时置为true
 
 	public CharArray(String chars) {
 		this.chars = chars;
+		this.pointer = 0;
+		this.minIndex = 0;
 	}
 
 	/*
@@ -49,9 +51,8 @@ public class CharArray implements Cloneable {
 		return chars.charAt(pointer);
 	}
 
-	/**
-	 * 获得子串
-	 * @return
+	/*
+	 * 获得CharArray类型的子串
 	 */
 	public CharArray getSubString() {
 		CharArray con = this;
@@ -72,6 +73,10 @@ public class CharArray implements Cloneable {
 		return null;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
 	@Override
 	public String toString() {
 		// TODO Auto-generated method stub

@@ -1,4 +1,6 @@
-
+/*
+ * 资源类
+ */
 public class Resource {
 	//处理开始和结尾
 	final static boolean NEXCLUDED = false;

@@ -2,9 +2,9 @@ import java.util.LinkedList;
 
 public class State {
 
-	Status status;
-	LinkedList<Edge> InEdges = new LinkedList<>();
-	LinkedList<Edge> OutEdges = new LinkedList<>();
+	Status status; //State的状态
+	LinkedList<Edge> inEdges = new LinkedList<>(); //指向该State的边
+	LinkedList<Edge> outEdges = new LinkedList<>(); //从该State指向别的State的边
 
 	public State() {
 		this.status = Status.READY;
@@ -16,35 +16,35 @@ public class State {
 
 	public State(Edge inEdges, Edge outEdges, Status status) {
 		this.status = status;
-		this.InEdges.add(inEdges);
-		addOutEdge(outEdges);
+		this.inEdges.add(inEdges);
+		this.outEdges.add(outEdges);
 	}
 
-	public void addOutEdge(Edge e) {
-		if (OutEdges.contains(e))
-			return;
-		OutEdges.add(e);
-	}
-
-	public void merge(State s) {
-		while (!s.InEdges.isEmpty()) {
-			patch(s.InEdges.getLast(), this);
-			s.InEdges.removeLast();
+	/*
+	 * 合并this与state
+	 */
+	public void merge(State state) {
+		while (!state.inEdges.isEmpty()) { //若state入度不为零
+			patch(state.inEdges.getLast(), this);
+			state.inEdges.removeLast();
 		}
-		while (!s.OutEdges.isEmpty()) {
-			patch(this, s.InEdges.getLast());
-			s.OutEdges.removeLast();
+		while (!state.outEdges.isEmpty()) { //若state出度不为零
+			patch(this, state.inEdges.getLast());
+			state.outEdges.removeLast();
 		}
 	}
 
-	public void patch(Edge e, State s) {
-		e.end = s;
-		s.InEdges.add(e);
+	/*
+	 * 将状态和边完全连接
+	 */
+	public void patch(Edge edge, State state) {
+		edge.end = state;
+		state.inEdges.add(edge);
 	}
 
-	public void patch(State s, Edge e) {
-		e.start = s;
-		s.addOutEdge(e);
+	public void patch(State state, Edge edge) {
+		edge.start = state;
+		state.outEdges.add(edge);
 	}
 	
 	// Getters and setters
@@ -57,32 +57,20 @@ public class State {
 	}
 
 	public LinkedList<Edge> getInEdges() {
-		return InEdges;
-	}
-
-	public void setInEdges(LinkedList<Edge> inEdges) {
-		InEdges = inEdges;
+		return inEdges;
 	}
 
 	public LinkedList<Edge> getOutEdges() {
-		return OutEdges;
+		return outEdges;
 	}
 
-	public void setOutEdges(LinkedList<Edge> outEdges) {
-		OutEdges = outEdges;
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "stat=" + status + ",In=" + inEdges.size() + ",Out=" + outEdges.size();
 	}
-
-//	@Override
-//	public String toString() {
-//		return "stat=" + status + ",In=" + InEdges.size() + ",Out=" + OutEdges.size();
-//	}
-//
-//	@Override
-//	public boolean equals(Object obj) {
-//		// TODO Auto-generated method stub
-//		State o = (State) obj;
-//		return this.status == o.status && this.InEdges.size() == o.InEdges.size()
-//				&& this.OutEdges.size() == o.OutEdges.size();
-//	}
 
 }
